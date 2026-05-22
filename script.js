@@ -67,14 +67,14 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // PENGATURAN TABS/NAVIGASI
-void function initTabs() {
+function initTabs() {
   document.querySelectorAll('[data-tab]').forEach(el => {
     el.addEventListener('click', (e) => {
       const targetTab = e.currentTarget.getAttribute('data-tab');
       switchTab(targetTab);
     });
   });
-}();
+}
 
 function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
@@ -158,6 +158,7 @@ function animateCounters() {
 // RENDER KAMPANYE DI HOMEPAGE
 function renderTeasers() {
   const container = document.getElementById('teaser-grid');
+  if (!container) return;
   container.innerHTML = campaigns.slice(0, 3).map(camp => {
     const percent = Math.min(100, Math.round((camp.raised / camp.target) * 100));
     return `
@@ -181,9 +182,10 @@ function renderTeasers() {
   }).join('');
 }
 
-// RENDER KAMPANYE DI HALAMAN UTAMA (DENGAN DETAIL EXPANDABLE)
+// RENDER KAMPANYE DI HALAMAN UTAMA (KODE UPDATE MENGISI DATA ANGKA & BAR PROGRESS)
 function renderCampaigns() {
   const container = document.getElementById('campaigns-list');
+  if (!container) return;
   const searchVal = document.getElementById('search-input').value.toLowerCase();
   
   const filtered = campaigns.filter(c => c.title.toLowerCase().includes(searchVal));
@@ -193,28 +195,42 @@ function renderCampaigns() {
     const isSelected = selectedCampaignId === camp.id;
     
     return `
-      <div class="bg-white rounded-3xl overflow-hidden border ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-slate-100'}" onclick="selectCampaign(${camp.id})">
+      <div class="bg-white rounded-3xl overflow-hidden border ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-slate-100'} cursor-pointer" onclick="selectCampaign(${camp.id})">
         <div class="flex flex-col md:flex-row">
           <img src="${camp.image}" class="w-full md:w-64 h-52 object-cover" />
           <div class="p-6 flex-grow flex flex-col justify-between">
             <div>
-              <h3 class="font-bold text-slate-800 text-xl hover:text-emerald-600">${camp.title}</h3>
-              <p class="text-sm text-slate-500 line-clamp-2">${camp.description}</p>
+              <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2 inline-block">${camp.category}</span>
+              <h3 class="font-bold text-slate-800 text-xl hover:text-emerald-600 transition-colors">${camp.title}</h3>
+              <p class="text-sm text-slate-500 line-clamp-2 mt-1">${camp.description}</p>
             </div>
+            
             <div class="mt-4 pt-4 border-t border-slate-100">
-               <div class="w-full bg-slate-100 h-2 rounded-full mb-2"><div class="bg-emerald-500 h-2 rounded-full" style="width: ${percent}%"></div></div>
-               <div class="text-xs text-slate-500"><strong>${formatRupiah(camp.raised)}</strong> dari ${formatRupiah(camp.target)} (${percent}%)</div>
+               <div class="w-full bg-slate-100 h-2 rounded-full mb-3 overflow-hidden">
+                   <div class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+               </div>
+               <div class="flex justify-between items-center text-xs">
+                   <div class="text-slate-600">
+                       <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wide">Terkumpul</span>
+                       <strong class="text-sm text-slate-800">${formatRupiah(camp.raised)}</strong> 
+                       <span class="text-slate-400">dari ${formatRupiah(camp.target)}</span>
+                   </div>
+                   <div class="bg-emerald-50 text-emerald-700 font-bold px-2 py-1 rounded-lg text-sm">
+                       ${percent}%
+                   </div>
+               </div>
             </div>
-          </div>
+            </div>
         </div>
         ${isSelected ? `
           <div class="bg-slate-50 p-6 border-t border-slate-100 space-y-4" onclick="event.stopPropagation()">
             <p class="text-sm text-slate-600">${camp.description}</p>
-            <div class="grid grid-cols-2 gap-4 text-xs bg-white p-4 rounded-xl border border-slate-100">
-              <div><span class="text-slate-400">Penggagas:</span> <span class="font-bold block">${camp.author}</span></div>
-              <div><span class="text-slate-400">Donatur:</span> <span class="font-bold block">${camp.donorsCount} Orang</span></div>
+            <div class="grid grid-cols-3 gap-4 text-xs bg-white p-4 rounded-xl border border-slate-100 text-center">
+              <div><span class="text-slate-400 block mb-1">Penggagas</span> <span class="font-bold text-slate-700">${camp.author}</span></div>
+              <div><span class="text-slate-400 block mb-1">Donatur</span> <span class="font-bold text-slate-700">${camp.donorsCount} Orang</span></div>
+              <div><span class="text-slate-400 block mb-1">Sisa Waktu</span> <span class="font-bold text-slate-700">${camp.daysLeft} Hari</span></div>
             </div>
-            <button onclick="openDonationModal(${camp.id})" class="bg-emerald-600 text-white font-bold py-2.5 px-6 rounded-xl text-sm w-full">Kirim Donasi</button>
+            <button onclick="openDonationModal(${camp.id})" class="bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl text-sm w-full hover:bg-emerald-500 transition-colors shadow-md shadow-emerald-100">Kirim Donasi</button>
           </div>
         ` : ''}
       </div>
@@ -279,99 +295,4 @@ function handleCreateCampaign(e) {
   renderTeasers();
   renderCampaigns();
   e.target.reset();
-}
-
-// PENDAFTARAN RELAWAN
-function handleVolunteerSubmit(e) {
-  e.preventDefault();
-  showToast('Pendaftaran relawan dikirim! Koordinator kami akan segera menghubungi WhatsApp Anda.');
-  e.target.reset();
-}
-
-// ARTIKEL EDUKASI
-function renderArticles() {
-  const container = document.getElementById('articles-grid');
-  container.innerHTML = educationalArticles.map(art => `
-    <article class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
-      <div class="space-y-4">
-        <span class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded">${art.category}</span>
-        <h4 class="font-bold text-slate-900 text-lg">${art.title}</h4>
-        <p class="text-sm text-slate-500">${art.summary}</p>
-      </div>
-      <div class="mt-6 pt-4 border-t border-slate-100 flex justify-between text-xs text-slate-400">
-        <span>Oleh: <strong>${art.author}</strong></span><span>${art.readTime}</span>
-      </div>
-    </article>
-  `).join('');
-}
-
-// INTEGRASI API GEMINI (AI GENERATE COPY)
-async function generateAICopy() {
-  const prompt = document.getElementById('aiPrompt').value.trim();
-  if (!prompt) return showToast('Masukkan ide kampanye terlebih dahulu!', 'error');
-
-  const btn = document.getElementById('btn-ai-copy');
-  btn.innerText = "Sedang Merancang...";
-  btn.disabled = true;
-
-  try {
-    const userQuery = `Buatlah draf promosi kampanye lingkungan terstruktur untuk: "${prompt}". Pakai sentuhan khas anak muda Tangerang Selatan yang peduli ekologi kota.`;
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: userQuery }] }] })
-    });
-
-    const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (text) {
-      document.getElementById('ai-results').classList.remove('hidden');
-      const box = document.getElementById('result-text-box');
-      box.classList.remove('hidden');
-      document.getElementById('aiResponseText').innerText = text;
-      showToast('Naskah berhasil dirancang oleh AI Gemini!');
-    }
-  } catch (err) {
-    showToast('Gagal menghubungi AI.', 'error');
-  } finally {
-    btn.innerText = "Buat Naskah Kampanye";
-    btn.disabled = false;
-  }
-}
-
-// INTEGRASI API IMAGEN (AI GENERATE POSTER IMAGE)
-async function generateAIImage() {
-  const prompt = document.getElementById('aiImagePrompt').value.trim();
-  if (!prompt) return showToast('Tuliskan visualisasi gambar poster!', 'error');
-
-  const btn = document.getElementById('btn-ai-image');
-  btn.innerText = "Sedang Menggambar...";
-  btn.disabled = true;
-
-  try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: { prompt: `Graphic professional vector illustration, environmental theme, showing ${prompt}` },
-        parameters: { sampleCount: 1 }
-      })
-    });
-
-    const result = await response.json();
-    const base64 = result.predictions?.[0]?.bytesBase64Encoded;
-    if (base64) {
-      document.getElementById('ai-results').classList.remove('hidden');
-      const box = document.getElementById('result-img-box');
-      box.classList.remove('hidden');
-      document.getElementById('aiResponseImg').src = `data:image/png;base64,${base64}`;
-      showToast('Gambar poster sukses dibuat oleh AI Imagen!');
-    }
-  } catch (err) {
-    showToast('Gagal memproses gambar via AI.', 'error');
-  } finally {
-    btn.innerText = "Hasilkan Ilustrasi AI";
-    btn.disabled = false;
-  }
 }
