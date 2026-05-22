@@ -1,0 +1,1554 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Heart, 
+  Users, 
+  TreePine, 
+  Trash2, 
+  ArrowRight, 
+  CheckCircle, 
+  Globe, 
+  Info, 
+  Plus, 
+  Sparkles, 
+  Image as ImageIcon, 
+  DollarSign, 
+  MapPin, 
+  Send, 
+  Calendar, 
+  Search, 
+  BookOpen, 
+  Award,
+  ChevronRight,
+  TrendingUp,
+  X,
+  CreditCard,
+  User,
+  Loader2
+} from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  Cell 
+} from 'recharts';
+
+
+const INITIAL_CAMPAIGNS = [
+  {
+    id: 1,
+    title: "1.000 Mangrove untuk Pesisir Tangsel",
+    category: "mangrove",
+    description: "Inisiatif restorasi ekosistem pesisir dengan menanam 1.000 bibit mangrove untuk mencegah abrasi pantai dan menciptakan habitat keanekaragaman hayati baru.",
+    target: 25000000,
+    raised: 18450000,
+    donorsCount: 142,
+    daysLeft: 12,
+    location: "Kawasan Pesisir, Tangerang Selatan",
+    image: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&q=80&w=800",
+    author: "Koalisi Hijau Pamulang",
+    updates: [
+      { date: "10 Mei 2026", text: "Pembelian bibit mangrove tahap pertama sebanyak 400 pohon telah selesai." },
+      { date: "02 Mei 2026", text: "Survei kelayakan tanah pesisir bersama dinas kehutanan." }
+    ]
+  },
+  {
+    id: 2,
+    title: "Edukasi Pengelolaan Sampah Kreatif RT/RW",
+    category: "waste",
+    description: "Program pelatihan pemilahan sampah organik & non-organik di 10 RW percontohan Tangsel, lengkap dengan pengadaan tong sampah komparatif dan komposter mini.",
+    target: 15000000,
+    raised: 9200000,
+    donorsCount: 88,
+    daysLeft: 24,
+    location: "Kecamatan Ciputat, Tangsel",
+    image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=800",
+    author: "Pemuda Penggerak Waste-to-Worth",
+    updates: [
+      { date: "12 Mei 2026", text: "Penyusunan modul saku pengelolaan sampah rumah tangga siap cetak." }
+    ]
+  },
+  {
+    id: 3,
+    title: "Bank Sampah Digital Remaja Serpong",
+    category: "waste",
+    description: "Pengembangan sistem digitalisasi bank sampah untuk memotivasi anak muda mengumpulkan sampah plastik yang nantinya bisa dikonversi menjadi saldo e-wallet.",
+    target: 30000000,
+    raised: 5400000,
+    donorsCount: 31,
+    daysLeft: 45,
+    location: "Serpong, Tangerang Selatan",
+    image: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&q=80&w=800",
+    author: "Himpunan Mahasiswa Lingkungan Tangsel",
+    updates: []
+  }
+];
+
+const EDUCATIONAL_ARTICLES = [
+  {
+    id: 1,
+    title: "Mengapa Mangrove Adalah Benteng Terbaik Pesisir Kita?",
+    summary: "Mangrove tidak hanya mencegah abrasi, tetapi juga menyerap karbon hingga 4 kali lebih banyak dibandingkan hutan hujan tropis biasa.",
+    readTime: "5 menit baca",
+    category: "Mangrove",
+    author: "Sarah Amelia",
+    date: "14 Mei 2026"
+  },
+  {
+    id: 2,
+    title: "Panduan Mudah Membuat Kompos di Rumah Sempit",
+    summary: "Lahan terbatas di kota seperti Tangerang Selatan bukan halangan untuk mengolah sampah organik dapur menjadi pupuk bernilai tinggi.",
+    readTime: "7 menit baca",
+    category: "Sampah",
+    author: "Rian Hidayat",
+    date: "10 Mei 2026"
+  },
+  {
+    id: 3,
+    title: "Mengenal Mikroplastik dan Dampaknya di Perairan Tangsel",
+    summary: "Hasil riset terbaru menunjukkan kontaminasi mikroplastik mulai masuk ke rantai makanan ikan air tawar lokal. Yuk, kurangi plastik sekali pakai!",
+    readTime: "6 menit baca",
+    category: "Edukasi",
+    author: "Dr. Budi Santoso",
+    date: "05 Mei 2026"
+  }
+];
+
+const IMPACT_CHART_DATA = [
+  { month: 'Jan', 'Mangrove Ditanam': 120, 'Sampah Terkelola (kg)': 450, 'Dana (Juta Rp)': 5 },
+  { month: 'Feb', 'Mangrove Ditanam': 250, 'Sampah Terkelola (kg)': 700, 'Dana (Juta Rp)': 12 },
+  { month: 'Mar', 'Mangrove Ditanam': 480, 'Sampah Terkelola (kg)': 1100, 'Dana (Juta Rp)': 19 },
+  { month: 'Apr', 'Mangrove Ditanam': 750, 'Sampah Terkelola (kg)': 1650, 'Dana (Juta Rp)': 28 },
+  { month: 'Mei', 'Mangrove Ditanam': 1150, 'Sampah Terkelola (kg)': 2400, 'Dana (Juta Rp)': 45 },
+];
+
+// Komponen pembantu untuk animasi angka naik (count-up effect) secara halus
+function AnimatedCounter({ target, duration = 1800, formatter = (v) => Math.floor(v).toLocaleString('id-ID') }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTime = null;
+    let animationFrameId;
+
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCount(progress * target);
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [target, duration]);
+
+  return <span>{formatter(count)}</span>;
+}
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [campaigns, setCampaigns] = useState(INITIAL_CAMPAIGNS);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [isDonateOpen, setIsDonateOpen] = useState(false);
+  const [donationAmount, setDonationAmount] = useState(50000);
+  const [donorName, setDonorName] = useState('');
+  const [donorEmail, setDonorEmail] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('qris');
+  const [donationSuccess, setDonationSuccess] = useState(false);
+  
+  // Custom Campaign Simulation State
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newCategory, setNewCategory] = useState('mangrove');
+  const [newDescription, setNewDescription] = useState('');
+  const [newTarget, setNewTarget] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+  const [newImage, setNewImage] = useState('');
+  const [newAuthor, setNewAuthor] = useState('');
+
+  // AI Assistant States (Gemini integrations)
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiImagePrompt, setAiImagePrompt] = useState('');
+  const [generatedImage, setGeneratedImage] = useState('');
+  const [isImageLoading, setIsImageLoading] = useState(false);
+
+  // Volunteer form state
+  const [volunteerName, setVolunteerName] = useState('');
+  const [volunteerPhone, setVolunteerPhone] = useState('');
+  const [volunteerInterest, setVolunteerInterest] = useState('reboisasi');
+  const [volunteerReason, setVolunteerReason] = useState('');
+  const [volunteerSuccess, setVolunteerSuccess] = useState(false);
+
+  // Notifications / Toast
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
+
+
+  const generateAICopy = async () => {
+    if (!aiPrompt.trim()) {
+      showToast('Masukkan konsep atau ide kampanye terlebih dahulu!', 'error');
+      return;
+    }
+    setIsAiLoading(true);
+    setAiResponse('');
+
+    const systemPrompt = `Anda adalah seorang copywriter ahli kampanye sosial lingkungan (crowdfunding) di Indonesia, khususnya untuk wilayah urban seperti Tangerang Selatan. Buatlah draf deskripsi kampanye lingkungan yang persuasif, menggugah emosi, menyasar anak muda, dan memiliki struktur jelas: 1) Judul Menarik, 2) Latar Belakang Masalah, 3) Solusi/Aksi Nyata, dan 4) Ajakan Bertindak (Call to Action). Jawab dalam format Markdown terstruktur yang rapi.`;
+    const userQuery = `Buatlah draf promosi kampanye untuk ide ini: "${aiPrompt}". Pastikan menyisipkan sentuhan khas anak muda Tangerang Selatan yang peduli ekologi kota.`;
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: userQuery }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] }
+        })
+      });
+
+      const result = await response.json();
+      const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (generatedText) {
+        setAiResponse(generatedText);
+        showToast('Konten promosi kampanye berhasil dibuat oleh AI!', 'success');
+      } else {
+        throw new Error('Gagal memproses hasil AI.');
+      }
+    } catch (error) {
+      console.error(error);
+      setAiResponse('Maaf, terjadi kesalahan saat menghubungi asisten AI kami. Coba lagi beberapa saat lagi.');
+      showToast('Gagal menghubungi AI.', 'error');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const generateAIImage = async () => {
+    if (!aiImagePrompt.trim()) {
+      showToast('Tuliskan visualisasi gambar kampanye terlebih dahulu!', 'error');
+      return;
+    }
+    setIsImageLoading(true);
+    setGeneratedImage('');
+
+    try {
+      const payload = {
+        instances: { 
+          prompt: `A beautiful and bright professional graphic illustration, concept art, showing ${aiImagePrompt}, vector art style, environmentally conscious, green and clean future theme, highly detailed, vibrant colors` 
+        },
+        parameters: { "sampleCount": 1 }
+      };
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+        setGeneratedImage(imageUrl);
+        setNewImage(imageUrl); // Automatically populate the simulated campaign cover
+        showToast('Gambar kampanye berhasil dibuat oleh AI!', 'success');
+      } else {
+        throw new Error('Gagal menghasilkan gambar.');
+      }
+    } catch (error) {
+      console.error(error);
+      showToast('Gagal memproses pembuatan gambar via AI.', 'error');
+    } finally {
+      setIsImageLoading(false);
+    }
+  };
+
+
+  const handleDonationSubmit = (e) => {
+    e.preventDefault();
+    if (!donorName.trim() || !donorEmail.trim()) {
+      showToast('Mohon lengkapi nama dan email Anda.', 'error');
+      return;
+    }
+
+    setDonationSuccess(true);
+    
+    // Simulate updating target in specific campaign
+    setTimeout(() => {
+      setCampaigns(prev => prev.map(c => {
+        if (c.id === selectedCampaign.id) {
+          return {
+            ...c,
+            raised: c.raised + Number(donationAmount),
+            donorsCount: c.donorsCount + 1
+          };
+        }
+        return c;
+      }));
+      showToast(`Terima kasih! Donasi sebesar Rp ${Number(donationAmount).toLocaleString('id-ID')} telah dikonfirmasi.`, 'success');
+    }, 1500);
+  };
+
+  const resetDonationModal = () => {
+    setIsDonateOpen(false);
+    setDonationSuccess(false);
+    setDonorName('');
+    setDonorEmail('');
+    setDonationAmount(50000);
+  };
+
+  const handleCreateCampaign = (e) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newDescription.trim() || !newTarget || !newAuthor.trim()) {
+      showToast('Mohon lengkapi semua kolom wajib.', 'error');
+      return;
+    }
+
+    const newProj = {
+      id: campaigns.length + 1,
+      title: newTitle,
+      category: newCategory,
+      description: newDescription,
+      target: Number(newTarget),
+      raised: 0,
+      donorsCount: 0,
+      daysLeft: 60,
+      location: newLocation || 'Tangerang Selatan',
+      image: newImage || 'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&q=80&w=800',
+      author: newAuthor,
+      updates: []
+    };
+
+    setCampaigns([newProj, ...campaigns]);
+    showToast('Proyek kampanye baru Anda berhasil diterbitkan!', 'success');
+    setIsCreateOpen(false);
+    
+    // Reset fields
+    setNewTitle('');
+    setNewDescription('');
+    setNewTarget('');
+    setNewLocation('');
+    setNewImage('');
+    setNewAuthor('');
+  };
+
+  const handleVolunteerSubmit = (e) => {
+    e.preventDefault();
+    if (!volunteerName || !volunteerPhone) {
+      showToast('Isi nama dan nomor telepon Anda!', 'error');
+      return;
+    }
+    setVolunteerSuccess(true);
+    showToast('Pendaftaran relawan berhasil dikirim! Tim kami akan menghubungi WhatsApp Anda.', 'success');
+  };
+
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-emerald-500 selection:text-white">
+      
+      {/* Toast Notification Container */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center p-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 ${
+          toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+        }`}>
+          <CheckCircle className="w-6 h-6 mr-3 flex-shrink-0" />
+          <p className="font-semibold">{toast.message}</p>
+        </div>
+      )}
+
+      {/* HEADER NAVBAR */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          
+          {/* Logo */}
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+            <div className="w-11 h-11 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-200">
+              <TreePine className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xl font-bold tracking-tight text-slate-900 block">Aksi Hijau</span>
+              <span className="text-xs text-emerald-600 font-semibold tracking-wider uppercase block -mt-1">Tangsel Youth</span>
+            </div>
+          </div>
+
+          {/* Nav Items */}
+          <nav className="hidden md:flex space-x-1">
+            {[
+              { id: 'home', label: 'Beranda' },
+              { id: 'campaigns', label: 'Proyek Donasi' },
+              { id: 'ai-helper', label: 'AI Kampanye' },
+              { id: 'volunteers', label: 'Gabung Relawan' },
+              { id: 'edu', label: 'Edukasi Lingkungan' }
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTab === item.id 
+                    ? 'bg-emerald-50 text-emerald-700' 
+                    : 'text-slate-600 hover:text-emerald-600 hover:bg-slate-50'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Primary Action Button */}
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => setIsCreateOpen(true)}
+              className="flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transform duration-150"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Galang Dana
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {}
+
+      <main className="pb-24">
+        
+        {/* TAB 1: HOME PAGE */}
+        {activeTab === 'home' && (
+          <div>
+            {/* HERO SECTION */}
+            <section className="relative overflow-hidden bg-gradient-to-b from-emerald-50/70 via-white to-slate-50 py-16 sm:py-24">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                  
+                  {/* Hero Left Info */}
+                  <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
+                    <div className="inline-flex items-center space-x-2 bg-emerald-100/80 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-semibold border border-emerald-200">
+                      <Sparkles className="w-4 h-4 text-emerald-600 animate-pulse" />
+                      <span>Gerakan Ekologis Pemuda Tangerang Selatan</span>
+                    </div>
+
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight">
+                      Ubah Niat Baik Menjadi <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Aksi Nyata</span> untuk Bumi Tangsel
+                    </h1>
+
+                    <p className="text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0">
+                      Satu platform pemuda terintegrasi untuk pendanaan kolektif penanaman mangrove di pesisir, serta pelatihan pengelolaan sampah kreatif demi lingkungan yang bersih, asri, dan berkelanjutan.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                      <button 
+                        onClick={() => setActiveTab('campaigns')}
+                        className="flex items-center justify-center bg-emerald-600 text-white font-bold px-8 py-4 rounded-xl hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-100 hover:shadow-xl hover:-translate-y-0.5"
+                      >
+                        Donasi Sekarang
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('volunteers')}
+                        className="flex items-center justify-center bg-white text-slate-700 font-semibold px-8 py-4 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all hover:border-slate-300"
+                      >
+                        Gabung Relawan
+                      </button>
+                    </div>
+
+                    {}
+                    {/* Simple Trust Elements */}
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 max-w-md mx-auto lg:mx-0">
+                      <div>
+                        <span className="block text-2xl font-bold text-emerald-600">
+                          <AnimatedCounter target={45} formatter={(v) => `Rp ${Math.floor(v)}Jt+`} />
+                        </span>
+                        <span className="block text-xs text-slate-500">Dana Tersalur</span>
+                      </div>
+                      <div>
+                        <span className="block text-2xl font-bold text-emerald-600">
+                          <AnimatedCounter target={1150} formatter={(v) => `${Math.floor(v).toLocaleString('id-ID')}+`} />
+                        </span>
+                        <span className="block text-xs text-slate-500">Mangrove Ditanam</span>
+                      </div>
+                      <div>
+                        <span className="block text-2xl font-bold text-emerald-600">
+                          <AnimatedCounter target={2.4} formatter={(v) => `${v.toFixed(1)} Ton`} />
+                        </span>
+                        <span className="block text-xs text-slate-500">Sampah Didaur</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Hero Right Visuals */}
+                  <div className="lg:col-span-5 relative">
+                    <div className="absolute -inset-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl blur opacity-25"></div>
+                    <div className="relative bg-white p-4 rounded-3xl shadow-xl border border-slate-100">
+                      <img 
+                        src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=800" 
+                        alt="Pemuda membersihkan lingkungan" 
+                        className="rounded-2xl w-full h-80 object-cover shadow-inner"
+                      />
+                      
+                      {/* Interactive Floating Badge */}
+                      <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center space-x-3 max-w-xs">
+                        <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-700">
+                          <Award className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400 font-medium uppercase">Inisiatif Hijau 2026</p>
+                          <p className="text-sm font-bold text-slate-800">100% Dana Terbuka & Terlacak</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </section>
+
+            {/* IMPACT DASHBOARD SECTION */}
+            <section className="py-16 bg-white border-y border-slate-100">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                  <span className="text-emerald-600 font-bold tracking-widest text-xs uppercase block mb-2">Transparansi Nyata</span>
+                  <h2 className="text-3xl font-extrabold text-slate-900">Perkembangan Dampak Lingkungan Kita</h2>
+                  <p className="text-slate-600 mt-2">Seluruh kontribusi Anda terdokumentasikan dalam real-time audit data pertumbuhan lingkungan Tangerang Selatan di bawah ini.</p>
+                </div>
+
+                {}
+                {/* Dashboard Stats with Counter Animation */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                  
+                  <div className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-6 rounded-2xl relative overflow-hidden transition-all hover:scale-[1.02] duration-300">
+                    <div className="absolute top-4 right-4 text-emerald-100">
+                      <TreePine className="w-16 h-16 animate-pulse" />
+                    </div>
+                    <p className="text-emerald-700 text-sm font-bold">Total Mangrove Ditanam</p>
+                    <h3 className="text-4xl font-extrabold text-emerald-900 mt-2">
+                      <AnimatedCounter target={1150} formatter={(v) => `${Math.floor(v).toLocaleString('id-ID')} Pohon`} />
+                    </h3>
+                    <div className="flex items-center text-xs text-emerald-600 font-medium mt-4">
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      <span>+240 pohon bulan ini di pesisir</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-teal-50 to-white border border-teal-100 p-6 rounded-2xl relative overflow-hidden transition-all hover:scale-[1.02] duration-300">
+                    <div className="absolute top-4 right-4 text-teal-100">
+                      <Trash2 className="w-16 h-16 animate-bounce" style={{ animationDuration: '3s' }} />
+                    </div>
+                    <p className="text-teal-700 text-sm font-bold">Volume Sampah Terkelola</p>
+                    <h3 className="text-4xl font-extrabold text-teal-900 mt-2">
+                      <AnimatedCounter target={2400} formatter={(v) => `${Math.floor(v).toLocaleString('id-ID')} Kg`} />
+                    </h3>
+                    <div className="flex items-center text-xs text-teal-600 font-medium mt-4">
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      <span>Dikonversi jadi pupuk kompos & briket</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-amber-50 to-white border border-amber-100 p-6 rounded-2xl relative overflow-hidden transition-all hover:scale-[1.02] duration-300">
+                    <div className="absolute top-4 right-4 text-amber-100">
+                      <Heart className="w-16 h-16 animate-pulse" />
+                    </div>
+                    <p className="text-amber-700 text-sm font-bold">Dana Terkumpul & Disalurkan</p>
+                    <h3 className="text-4xl font-extrabold text-amber-900 mt-2">
+                      <AnimatedCounter target={33050000} formatter={(v) => `Rp ${Math.floor(v).toLocaleString('id-ID')}`} />
+                    </h3>
+                    <div className="flex items-center text-xs text-amber-600 font-medium mt-4">
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      <span>Dari 261 pahlawan lingkungan</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Recharts Graphical Analysis */}
+                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                  <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-emerald-600" />
+                    Tren Dampak Kolektif Aksi Hijau Tangsel (Jan - Mei 2026)
+                  </h4>
+                  <div className="h-80 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={IMPACT_CHART_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorMangrove" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorWaste" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#0d9488" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#0d9488" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="month" stroke="#94a3b8" />
+                        <YAxis stroke="#94a3b8" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="Mangrove Ditanam" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorMangrove)" />
+                        <Area type="monotone" dataKey="Sampah Terkelola (kg)" stroke="#0d9488" strokeWidth={3} fillOpacity={1} fill="url(#colorWaste)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+              </div>
+            </section>
+
+            {/* CAMPAIGN TEASER SECTION */}
+            <section className="py-16">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
+                  <div>
+                    <span className="text-emerald-600 font-bold tracking-widest text-xs uppercase block mb-2">Proyek Aktif</span>
+                    <h2 className="text-3xl font-extrabold text-slate-900">Butuh Kontribusi Anda</h2>
+                  </div>
+                  <button 
+                    onClick={() => setActiveTab('campaigns')}
+                    className="mt-4 md:mt-0 text-emerald-600 font-bold flex items-center hover:text-emerald-700 hover:underline"
+                  >
+                    Lihat Semua Proyek
+                    <ChevronRight className="w-5 h-5 ml-1" />
+                  </button>
+                </div>
+
+                {/* Project Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {campaigns.slice(0, 3).map((camp) => {
+                    const percent = Math.min(100, Math.round((camp.raised / camp.target) * 100));
+                    return (
+                      <div key={camp.id} className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full">
+                        <div className="relative">
+                          <img src={camp.image} alt={camp.title} className="w-full h-48 object-cover" />
+                          <span className={`absolute top-4 right-4 px-3 py-1 text-xs font-extrabold text-white rounded-full uppercase tracking-wider ${
+                            camp.category === 'mangrove' ? 'bg-emerald-600' : 'bg-teal-600'
+                          }`}>
+                            {camp.category}
+                          </span>
+                        </div>
+                        
+                        <div className="p-6 flex-grow flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <span className="text-xs text-slate-400 font-semibold flex items-center">
+                              <MapPin className="w-3.5 h-3.5 mr-1" />
+                              {camp.location}
+                            </span>
+                            <h3 className="font-bold text-slate-800 text-lg leading-snug hover:text-emerald-600 transition-colors cursor-pointer" onClick={() => { setSelectedCampaign(camp); setActiveTab('campaigns'); }}>
+                              {camp.title}
+                            </h3>
+                            <p className="text-sm text-slate-500 line-clamp-3">{camp.description}</p>
+                          </div>
+
+                          <div className="mt-6 pt-4 border-t border-slate-100 space-y-4">
+                            {/* Progress bar */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs font-semibold text-slate-500">
+                                <span>{percent}% Terkumpul</span>
+                                <span>Target: Rp {camp.target.toLocaleString('id-ID')}</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-2">
+                                <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <span className="block text-xs text-slate-400">Dana Terkumpul</span>
+                                <span className="font-extrabold text-slate-800">Rp {camp.raised.toLocaleString('id-ID')}</span>
+                              </div>
+                              <button 
+                                onClick={() => { setSelectedCampaign(camp); setIsDonateOpen(true); }}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors"
+                              >
+                                Beri Donasi
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+              </div>
+            </section>
+
+          </div>
+        )}
+
+        {/* TAB 2: ALL CAMPAIGNS & DETAILS */}
+        {activeTab === 'campaigns' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">Galeri Proyek Pemuda Tangsel</h1>
+              <p className="text-slate-600 mt-2">Dukung inisiatif lokal pahlawan lingkungan sekitar kita demi kebaikan bumi Tangerang Selatan.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              
+              {/* Left Column: Campaigns list */}
+              <div className="lg:col-span-8 space-y-6">
+                <div className="flex items-center space-x-2 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm mb-6">
+                  <Search className="w-5 h-5 text-slate-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Cari kampanye atau aksi penanaman..." 
+                    className="bg-transparent border-none outline-none w-full text-slate-800 placeholder-slate-400 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-6">
+                  {campaigns.map((camp) => {
+                    const percent = Math.min(100, Math.round((camp.raised / camp.target) * 100));
+                    const isSelected = selectedCampaign?.id === camp.id;
+                    return (
+                      <div 
+                        key={camp.id} 
+                        className={`bg-white rounded-3xl overflow-hidden border transition-all duration-200 cursor-pointer ${
+                          isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-lg' : 'border-slate-100 hover:border-slate-300 shadow-sm'
+                        }`}
+                        onClick={() => setSelectedCampaign(camp)}
+                      >
+                        <div className="flex flex-col md:flex-row">
+                          <img src={camp.image} alt={camp.title} className="w-full md:w-64 h-52 object-cover" />
+                          
+                          <div className="p-6 flex-grow flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                  camp.category === 'mangrove' ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'
+                                }`}>
+                                  {camp.category}
+                                </span>
+                                <span className="text-xs text-slate-400 font-medium">{camp.daysLeft} hari lagi</span>
+                              </div>
+                              <h3 className="font-bold text-slate-800 text-xl leading-snug hover:text-emerald-600 mb-2">
+                                {camp.title}
+                              </h3>
+                              <p className="text-sm text-slate-500 line-clamp-2">{camp.description}</p>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-slate-100">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="text-sm">
+                                  <span className="font-bold text-slate-800">Rp {camp.raised.toLocaleString('id-ID')}</span>
+                                  <span className="text-slate-400 text-xs"> terkumpul dari Rp {camp.target.toLocaleString('id-ID')}</span>
+                                </div>
+                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{percent}%</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-2">
+                                <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expandable Campaign Details Section */}
+                        {isSelected && (
+                          <div className="bg-slate-50 p-6 border-t border-slate-100 space-y-6">
+                            <div>
+                              <h4 className="font-bold text-slate-800 mb-2">Detail Kampanye</h4>
+                              <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed">{camp.description}</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-white p-4 rounded-xl border border-slate-100">
+                                <span className="block text-xs text-slate-400">Penggagas Proyek</span>
+                                <span className="font-bold text-slate-700">{camp.author}</span>
+                              </div>
+                              <div className="bg-white p-4 rounded-xl border border-slate-100">
+                                <span className="block text-xs text-slate-400">Jumlah Pendukung</span>
+                                <span className="font-bold text-slate-700">{camp.donorsCount} Donatur</span>
+                              </div>
+                            </div>
+
+                            {/* Updates / Logs */}
+                            <div>
+                              <h4 className="font-bold text-slate-800 mb-3">Lini Masa & Kabar Terbaru</h4>
+                              {camp.updates.length > 0 ? (
+                                <div className="space-y-4 relative pl-4 border-l-2 border-emerald-500">
+                                  {camp.updates.map((upd, idx) => (
+                                    <div key={idx} className="relative">
+                                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                                      <span className="block text-xs text-emerald-600 font-bold">{upd.date}</span>
+                                      <p className="text-sm text-slate-600 mt-1">{upd.text}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-400 italic">Belum ada pembaruan aktivitas untuk kampanye ini.</p>
+                              )}
+                            </div>
+
+                            <div className="flex justify-end pt-4 border-t border-slate-200">
+                              <button 
+                                onClick={() => setIsDonateOpen(true)}
+                                className="flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-md shadow-emerald-100"
+                              >
+                                <Heart className="w-5 h-5 mr-2 fill-current" />
+                                Kirim Donasi Sekarang
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right Column: Mini sidebar explaining impact area */}
+              <div className="lg:col-span-4 space-y-6">
+                
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                    <Info className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-800 text-lg">Bagaimana Donasi Anda Bekerja?</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                    Setiap rupiah yang masuk langsung dikelola secara kolektif oleh Aliansi Pemuda Tangsel untuk implementasi aksi penanaman, serta pembuatan posko bank sampah terpadu. Semua pengeluaran terlaporkan secara transparan.
+                  </p>
+                  <ul className="text-xs text-slate-500 space-y-2 pt-2">
+                    <li className="flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" />
+                      85% Alokasi Kegiatan Lapangan & Bibit
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" />
+                      10% Logistik Relawan & Edukasi
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" />
+                      5% Pemeliharaan Platform
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-emerald-900 text-emerald-100 p-6 rounded-3xl shadow-lg relative overflow-hidden">
+                  <div className="absolute right-0 bottom-0 opacity-10">
+                    <TreePine className="w-40 h-40" />
+                  </div>
+                  <h4 className="font-bold text-white text-lg mb-2">Ingin Mengajukan Proyek?</h4>
+                  <p className="text-xs text-emerald-200 mb-6 leading-relaxed">
+                    Jika kamu adalah kelompok karang taruna atau komunitas pemuda lingkungan di Tangerang Selatan, kamu juga dapat memicu kampanye lingkungan baru di sini.
+                  </p>
+                  <button 
+                    onClick={() => setIsCreateOpen(true)}
+                    className="w-full bg-white text-emerald-950 hover:bg-emerald-50 font-bold py-3 rounded-xl text-sm transition-colors"
+                  >
+                    Mulai Galang Dana
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: AI CAMPAIGN CREATOR */}
+        {activeTab === 'ai-helper' && (
+          <div className="max-w-4xl mx-auto px-4 py-10">
+            
+            <div className="text-center mb-10">
+              <span className="inline-flex items-center bg-gradient-to-r from-emerald-100 to-indigo-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
+                <Sparkles className="w-3.5 h-3.5 mr-1 text-indigo-600 animate-spin" />
+                Teknologi AI Gemini & Imagen
+              </span>
+              <h1 className="text-3xl font-extrabold text-slate-900 mt-3">AI Asisten Kampanye Lingkungan</h1>
+              <p className="text-slate-600 mt-2">Dapatkan draf copywriter persuasif dan gambar ilustrasi berkualitas tinggi untuk kampanye sosial ekologi Anda.</p>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-md overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 border-b border-slate-100">
+                
+                {/* Writing Tab */}
+                <div className="p-8 border-r border-slate-100 space-y-6">
+                  <div className="flex items-center space-x-2 text-emerald-700">
+                    <Sparkles className="w-5 h-5" />
+                    <h3 className="font-bold">Pembuat Deskripsi Kampanye</h3>
+                  </div>
+                  
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Masukkan ide mentah kampanye Anda (misal: "Penanaman mangrove di pantai dekat muara cisadane" atau "Sistem tukar botol plastik jadi poin jajan remaja serpong"). AI akan menyusun kalimat promosi profesional.
+                  </p>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase">Gagasan Kampanye</label>
+                    <textarea 
+                      rows="4" 
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="Contoh: Menggalang dana untuk komposter mandiri tingkat RW di perumahan Pamulang Barat..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                    ></textarea>
+                  </div>
+
+                  <button 
+                    onClick={generateAICopy}
+                    disabled={isAiLoading}
+                    className="w-full flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 text-white font-bold py-3.5 rounded-xl text-sm transition-colors shadow-md shadow-emerald-50"
+                  >
+                    {isAiLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Sedang Merancang Konten...
+                      </>
+                    ) : 'Buat Naskah Kampanye'}
+                  </button>
+                </div>
+
+                {/* Cover Art Generation Tab */}
+                <div className="p-8 bg-slate-50/50 space-y-6">
+                  <div className="flex items-center space-x-2 text-emerald-700">
+                    <ImageIcon className="w-5 h-5" />
+                    <h3 className="font-bold">Pembuat Cover Art AI</h3>
+                  </div>
+
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Tuliskan konsep visualisasi poster kampanye yang Anda inginkan. Kami akan mengonversinya menjadi ilustrasi menakjubkan menggunakan Imagen 4.0.
+                  </p>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase">Visualisasi Gambar (Inggris/Indonesia)</label>
+                    <textarea 
+                      rows="4" 
+                      value={aiImagePrompt}
+                      onChange={(e) => setAiImagePrompt(e.target.value)}
+                      placeholder="Contoh: Teenagers planting mangrove trees at sunny coastal beach of Tangsel, cartoon graphic illustration..."
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                    ></textarea>
+                  </div>
+
+                  <button 
+                    onClick={generateAIImage}
+                    disabled={isImageLoading}
+                    className="w-full flex items-center justify-center bg-teal-600 hover:bg-teal-500 disabled:bg-slate-300 text-white font-bold py-3.5 rounded-xl text-sm transition-colors shadow-md shadow-teal-50"
+                  >
+                    {isImageLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Sedang Menggambar Poster...
+                      </>
+                    ) : 'Hasilkan Ilustrasi AI'}
+                  </button>
+                </div>
+
+              </div>
+
+              {/* AI RESULTS DISPLAY */}
+              {(aiResponse || generatedImage) && (
+                <div className="p-8 bg-emerald-50/20 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {aiResponse && (
+                    <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm space-y-4">
+                      <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block">Hasil Penulisan Naskah:</span>
+                      <div className="prose prose-emerald prose-sm text-slate-700 whitespace-pre-line leading-relaxed max-h-[400px] overflow-y-auto pr-2">
+                        {aiResponse}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setNewDescription(aiResponse);
+                          showToast('Disalin ke form simulasi kampanye baru!', 'success');
+                        }}
+                        className="text-xs font-bold text-emerald-600 flex items-center hover:underline"
+                      >
+                        Gunakan Deskripsi Ini Untuk Proyek Baru Anda →
+                      </button>
+                    </div>
+                  )}
+
+                  {generatedImage && (
+                    <div className="bg-white p-6 rounded-2xl border border-teal-100 shadow-sm space-y-4 flex flex-col justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-teal-700 uppercase tracking-wider block mb-2">Hasil Ilustrasi Gambar:</span>
+                        <img src={generatedImage} alt="AI Generated" className="rounded-xl w-full h-64 object-cover shadow border border-slate-200" />
+                      </div>
+                      <div className="text-xs text-slate-500 italic mt-2">
+                        Gambar di atas telah dimuat otomatis sebagai cover gambar proyek baru Anda.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 4: VOLUNTEERS HUB */}
+        {activeTab === 'volunteers' && (
+          <div className="max-w-6xl mx-auto px-4 py-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              
+              {/* Left Column Info */}
+              <div className="lg:col-span-6 space-y-8">
+                <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-semibold border border-emerald-100">
+                  <Users className="w-4 h-4 text-emerald-600" />
+                  <span>Komunitas Aksi Hijau Tangsel</span>
+                </div>
+
+                <h1 className="text-4xl font-extrabold text-slate-900 leading-tight">
+                  Bergabung Menjadi <span className="text-emerald-600">Relawan Bumi</span> Masa Depan
+                </h1>
+
+                <p className="text-slate-600 leading-relaxed">
+                  Bukan hanya donasi uang, kami sangat membutuhkan tenaga, pikiran, serta kecintaanmu untuk turun langsung ke lapangan pesisir dan mengedukasi warga terkait pengelolaan sampah kreatif.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                      <CheckCircle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">Kegiatan Terjadwal Rutin</p>
+                      <p className="text-sm text-slate-500">Penanaman bibit bulanan, pembersihan pantai pesisir, dan sosialisasi ecobrick di balai RW.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                      <CheckCircle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">E-Sertifikat & Jejaring Sosial</p>
+                      <p className="text-sm text-slate-500">Sertifikat resmi dari komunitas Aksi Hijau & relasi kuat antarpemuda penggiat alam se-Banten.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upcoming Events Box */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                  <h4 className="font-bold text-slate-800 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-rose-500" />
+                    Agenda Terdekat Bulan Ini
+                  </h4>
+                  <div className="divide-y divide-slate-100">
+                    <div className="py-2 flex justify-between items-center text-sm">
+                      <span className="text-slate-600">Aksi Tanam 300 Mangrove Pesisir</span>
+                      <span className="bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded text-xs">24 Mei 2026</span>
+                    </div>
+                    <div className="py-2 flex justify-between items-center text-sm">
+                      <span className="text-slate-600">Workshop Pemilahan Sampah Organik</span>
+                      <span className="bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded text-xs">31 Mei 2026</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right Column Form */}
+              <div className="lg:col-span-6">
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-lg space-y-6">
+                  <h3 className="text-2xl font-bold text-slate-900">Formulir Pendaftaran Relawan</h3>
+                  
+                  {volunteerSuccess ? (
+                    <div className="bg-emerald-50 text-emerald-900 p-6 rounded-2xl border border-emerald-100 text-center space-y-4">
+                      <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto" />
+                      <h4 className="font-extrabold text-xl">Pendaftaran Diterima!</h4>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        Terima kasih telah mengajukan diri sebagai pahlawan lingkungan. Koordinator Relawan kami akan menghubungi Anda melalui WhatsApp dalam waktu 1x24 jam untuk verifikasi & detail keberangkatan.
+                      </p>
+                      <button 
+                        onClick={() => {
+                          setVolunteerSuccess(false);
+                          setVolunteerName('');
+                          setVolunteerPhone('');
+                          setVolunteerReason('');
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition-colors"
+                      >
+                        Daftar Kembali
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleVolunteerSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase">Nama Lengkap</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={volunteerName}
+                          onChange={(e) => setVolunteerName(e.target.value)}
+                          placeholder="Contoh: Aditia Saputra" 
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase">Nomor WhatsApp</label>
+                        <input 
+                          type="tel" 
+                          required
+                          value={volunteerPhone}
+                          onChange={(e) => setVolunteerPhone(e.target.value)}
+                          placeholder="Contoh: 081234567890" 
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase">Fokus Minat</label>
+                        <select 
+                          value={volunteerInterest}
+                          onChange={(e) => setVolunteerInterest(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                        >
+                          <option value="reboisasi">Penanaman Mangrove di Pesisir</option>
+                          <option value="waste">Edukasi & Pemilahan Sampah Kreatif</option>
+                          <option value="documentation">Dokumentasi Video & Desain Kreatif</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase">Mengapa Anda Tertarik Bergabung?</label>
+                        <textarea 
+                          rows="3" 
+                          value={volunteerReason}
+                          onChange={(e) => setVolunteerReason(e.target.value)}
+                          placeholder="Tuliskan motivasi singkat Anda..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                        ></textarea>
+                      </div>
+
+                      <button 
+                        type="submit"
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl text-sm transition-colors shadow-lg shadow-emerald-50"
+                      >
+                        Kirim Pendaftaran Relawan
+                      </button>
+                    </form>
+                  )}
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: EDUCATIONAL BLOG */}
+        {activeTab === 'edu' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">Edukasi Ekologi & Sampah</h1>
+              <p className="text-slate-600 mt-2">Pahami landasan ilmiah aksi kita. Bagikan pengetahuan ini untuk membangun kesadaran kolektif warga Tangerang Selatan.</p>
+            </div>
+
+            {/* Featured Post Card */}
+            <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm mb-12 flex flex-col lg:flex-row">
+              <img 
+                src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=1200" 
+                alt="Hutan Lindung Hijau" 
+                className="w-full lg:w-1/2 h-80 lg:h-auto object-cover"
+              />
+              <div className="p-8 lg:p-12 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <span className="text-xs font-extrabold text-emerald-600 uppercase tracking-widest block">Artikel Unggulan</span>
+                  <h3 className="text-2xl lg:text-3xl font-extrabold text-slate-900 leading-snug">
+                    Hubungan Erat Ekosistem Mangrove dengan Pencegahan Banjir Rob Tangerang Selatan
+                  </h3>
+                  <p className="text-slate-600 leading-relaxed text-sm">
+                    Kawasan pesisir sekitar muara cisadane rawan mengalami intrusi air laut dan banjir rob yang berdampak pada pemukiman warga terdekat. Studi menunjukkan rimbunnya hutan bakau (mangrove) mampu menurunkan energi gelombang pasang hingga 60%, memberikan waktu perlindungan vital bagi warga sekitar.
+                  </p>
+                </div>
+                <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700">AK</div>
+                    <div>
+                      <span className="block text-sm font-bold text-slate-800">Aksi Hijau Research</span>
+                      <span className="block text-xs text-slate-400">12 Mei 2026 • 10 menit baca</span>
+                    </div>
+                  </div>
+                  <button className="text-emerald-600 font-bold text-sm flex items-center hover:underline">
+                    Baca Lengkap →
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Educational Articles Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {EDUCATIONAL_ARTICLES.map(art => (
+                <article key={art.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs text-slate-400 font-semibold">
+                      <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{art.category}</span>
+                      <span>{art.date}</span>
+                    </div>
+                    <h4 className="font-bold text-slate-900 text-lg hover:text-emerald-600 transition-colors cursor-pointer">
+                      {art.title}
+                    </h4>
+                    <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed">{art.summary}</p>
+                  </div>
+                  
+                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Karya <strong className="text-slate-600">{art.author}</strong></span>
+                    <span className="text-emerald-600 font-bold">{art.readTime}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+      </main>
+
+      {}
+
+      {isDonateOpen && selectedCampaign && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={resetDonationModal}></div>
+          
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 transform transition-all z-10">
+            <div className="bg-emerald-900 text-white p-6 relative">
+              <button 
+                onClick={resetDonationModal}
+                className="absolute top-4 right-4 text-emerald-200 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <span className="text-xs font-bold tracking-widest text-emerald-300 uppercase block mb-1">Crowdfunding Aksi Hijau</span>
+              <h3 className="font-extrabold text-xl leading-snug">{selectedCampaign.title}</h3>
+            </div>
+
+            {donationSuccess ? (
+              <div className="p-8 text-center space-y-6">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle className="w-10 h-10" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-slate-800 text-xl">Donasi Diproses!</h4>
+                  <p className="text-sm text-slate-500 px-4 leading-relaxed">
+                    Terima kasih telah berkontribusi senilai <strong className="text-emerald-600 font-bold">Rp {Number(donationAmount).toLocaleString('id-ID')}</strong> untuk pelestarian alam Tangerang Selatan.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2 text-xs text-left max-w-xs mx-auto">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">ID Transaksi</span>
+                    <span className="font-bold text-slate-700">AH-{Math.floor(100000 + Math.random() * 900000)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Metode</span>
+                    <span className="font-bold text-slate-700 uppercase">{paymentMethod}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Status</span>
+                    <span className="font-bold text-emerald-600">Berhasil</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={resetDonationModal}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+                >
+                  Tutup Rincian
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleDonationSubmit} className="p-6 space-y-5">
+                
+                {/* Name */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Nama Pendukung (Bisa Anonim)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={donorName}
+                    onChange={(e) => setDonorName(e.target.value)}
+                    placeholder="Contoh: Rian Pratama" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Email Untuk Bukti Donasi</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={donorEmail}
+                    onChange={(e) => setDonorEmail(e.target.value)}
+                    placeholder="Contoh: rian@email.com" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                  />
+                </div>
+
+                {/* Donation Amount selector */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Jumlah Donasi (Rupiah)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[20000, 50000, 100000, 250000, 500000].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setDonationAmount(amt)}
+                        className={`py-2 px-1 rounded-xl font-bold text-xs border transition-all ${
+                          donationAmount === amt 
+                            ? 'bg-emerald-600 text-white border-emerald-600' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        Rp {amt.toLocaleString('id-ID')}
+                      </button>
+                    ))}
+                    <input 
+                      type="number" 
+                      placeholder="Jumlah Custom..."
+                      onChange={(e) => setDonationAmount(e.target.value)}
+                      className="col-span-3 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-center font-bold focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Payment Method Selector */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Metode Pembayaran</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'qris', name: 'QRIS (E-Wallet)' },
+                      { id: 'bca', name: 'Transfer BCA' },
+                      { id: 'mandiri', name: 'Transfer Mandiri' },
+                      { id: 'gopay', name: 'GoPay / OVO' }
+                    ].map(pm => (
+                      <button
+                        key={pm.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(pm.id)}
+                        className={`flex items-center space-x-2 py-2 px-3 rounded-xl border text-left text-xs font-medium transition-colors ${
+                          paymentMethod === pm.id 
+                            ? 'border-emerald-500 bg-emerald-50/50 text-emerald-800' 
+                            : 'border-slate-100 hover:bg-slate-50 text-slate-600'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4 text-slate-400" />
+                        <span>{pm.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl text-sm transition-colors shadow-lg shadow-emerald-50"
+                >
+                  Bayar Rp {Number(donationAmount).toLocaleString('id-ID')}
+                </button>
+
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {}
+
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsCreateOpen(false)}></div>
+          
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-100 transform transition-all z-10">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 relative">
+              <button 
+                onClick={() => setIsCreateOpen(false)}
+                className="absolute top-4 right-4 text-emerald-100 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <h3 className="font-extrabold text-2xl">Mulai Galang Dana Lingkungan</h3>
+              <p className="text-xs text-emerald-100 mt-1">Isi formulir berikut untuk menerbitkan simulasi kampanye Anda di platform.</p>
+            </div>
+
+            <form onSubmit={handleCreateCampaign} className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
+              
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase">Judul Proyek Kampanye *</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Contoh: Penyelamatan Pantai Cisadane dari Limbah Makro" 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Kategori Proyek *</label>
+                  <select 
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                  >
+                    <option value="mangrove">Mangrove / Reboisasi</option>
+                    <option value="waste">Sampah / Edukasi</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Target Dana (Rupiah) *</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={newTarget}
+                    onChange={(e) => setNewTarget(e.target.value)}
+                    placeholder="Contoh: 15000000" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Lokasi Kegiatan *</label>
+                  <input 
+                    type="text" 
+                    value={newLocation}
+                    onChange={(e) => setNewLocation(e.target.value)}
+                    placeholder="Contoh: Pamulang Barat, Tangsel" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase">Nama Komunitas Penggagas *</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newAuthor}
+                    onChange={(e) => setNewAuthor(e.target.value)}
+                    placeholder="Contoh: Pemuda Peduli Ciputat" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase">Deskripsi Narasi Kampanye *</label>
+                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex items-center justify-between mb-2">
+                  <span className="text-xs text-emerald-800 flex items-center">
+                    <Sparkles className="w-3.5 h-3.5 mr-1 text-emerald-600 animate-pulse" />
+                    Butuh ide tulisan? Gunakan AI Helper di navigasi utama!
+                  </span>
+                </div>
+                <textarea 
+                  rows="4" 
+                  required
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Ceritakan latar belakang aksi ini dan ke mana dana akan dialokasikan..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                ></textarea>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase">URL Gambar Sampul (Opsional)</label>
+                <input 
+                  type="text" 
+                  value={newImage}
+                  onChange={(e) => setNewImage(e.target.value)}
+                  placeholder="https://images.unsplash.com/..." 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                />
+                {newImage && (
+                  <img src={newImage} alt="Cover preview" className="h-20 w-full object-cover rounded-lg border border-slate-200 mt-2" />
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsCreateOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-800"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors shadow-lg shadow-emerald-50"
+                >
+                  Terbitkan Kampanye
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+          
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
+                <TreePine className="w-5 h-5" />
+              </div>
+              <span className="text-white text-lg font-bold">Aksi Hijau</span>
+            </div>
+            <p className="text-xs leading-relaxed">
+              Komunitas aksi kolaboratif pemuda Tangerang Selatan demi pemulihan ekosistem pesisir banten dan edukasi pemilahan sampah warga mandiri.
+            </p>
+          </div>
+
+          <div>
+            <h5 className="text-white font-bold text-sm mb-4">Navigasi</h5>
+            <ul className="space-y-2 text-xs">
+              <li><button onClick={() => setActiveTab('home')} className="hover:text-white transition-colors">Beranda</button></li>
+              <li><button onClick={() => setActiveTab('campaigns')} className="hover:text-white transition-colors">Proyek Crowdfunding</button></li>
+              <li><button onClick={() => setActiveTab('ai-helper')} className="hover:text-white transition-colors">Kreator Kampanye AI</button></li>
+              <li><button onClick={() => setActiveTab('volunteers')} className="hover:text-white transition-colors">Pendaftaran Relawan</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <h5 className="text-white font-bold text-sm mb-4">Fokus Ekologi</h5>
+            <ul className="space-y-2 text-xs">
+              <li>Restorasi Hutan Mangrove</li>
+              <li>Pencegahan Abrasi Pesisir</li>
+              <li>Bank Sampah Digital</li>
+              <li>Komposting Mandiri</li>
+            </ul>
+          </div>
+
+          <div>
+            <h5 className="text-white font-bold text-sm mb-4">Hubungi Kami</h5>
+            <p className="text-xs leading-relaxed">
+              Posko Utama Aksi Hijau Tangsel<br />
+              Kec. Serpong, Tangerang Selatan, Banten 15310
+            </p>
+            <p className="text-xs mt-2 text-emerald-500 font-bold">halo@aksihijau.id</p>
+          </div>
+
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 mt-8 border-t border-slate-800 text-center text-xs">
+          <p>© 2026 Aksi Hijau Tangerang Selatan. Dibuat dengan penuh rasa cinta untuk kelestarian Bumi Indonesia.</p>
+        </div>
+      </footer>
+
+    </div>
+  );
+}
